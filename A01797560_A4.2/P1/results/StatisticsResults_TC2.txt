@@ -1,0 +1,13 @@
+Resultados de Estadística Descriptiva
+====================================
+Archivo de entrada: P1\test\TC2.txt
+Elementos válidos: 1977
+Elementos inválidos: 0
+
+Media: 250.7840161861406
+Mediana: 247.0
+Moda: 230.0
+Varianza poblacional: 20785.369132479238
+Desviación estándar poblacional: 144.17131868884059
+
+Tiempo transcurrido (segundos): 0.006397

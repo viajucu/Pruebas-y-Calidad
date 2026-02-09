@@ -1,0 +1,13 @@
+Resultados de Estadística Descriptiva
+====================================
+Archivo de entrada: P1\test\TC6.txt
+Elementos válidos: 3000
+Elementos inválidos: 0
+
+Media: 1.8790659927977473e+20
+Mediana: 1.88008049965543e+20
+Moda: Sin moda (valores únicos o misma frecuencia)
+Varianza poblacional: 1.1530904699530647e+40
+Desviación estándar poblacional: 1.0738205017380998e+20
+
+Tiempo transcurrido (segundos): 0.007996
