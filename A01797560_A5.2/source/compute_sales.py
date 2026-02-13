@@ -1,4 +1,4 @@
-"""computeSales.py
+"""compute_sales.py
 
 Lee el catálogo de precios y un registro de ventas, calcula el costo total por
 venta (admite cantidades negativas como devoluciones/ajustes), calcula el gran
@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from datetime import datetime
 
 # Utilidades
 
@@ -61,6 +62,7 @@ class SaleLine:
 
     @property
     def line_total(self) -> Decimal:
+        """Representa una línea de venta ya validada."""
         return (
             self.unit_price * self.quantity
         ).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
@@ -344,7 +346,6 @@ def render_report(
     elapsed_s: float,
 ) -> str:
     """Genera un reporte en texto."""
-    from datetime import datetime
 
     header = [
         "====================== Resultados de Ventas ======================",
