@@ -1,0 +1,61 @@
+====================== Resultados de Ventas ======================
+Catálogo: source\TC1.ProductList.json
+Ventas:   test\TC2.Sales.json
+Fecha/Hora: 2026-02-13 13:26:32
+------------------------------------------------------------------
+Convenciones: cantidades negativas = devoluciones/ajustes; 0 = omitida
+Partidas válidas: 46
+Errores:          0
+------------------------------------------------------------------
+Producto                                    Cant.    P. Unitario        Importe
+-----------------------------------------------------
+Rustic breakfast                              200         $21.32      $4,264.00
+Sandwich with salad                            23         $22.48        $517.04
+Raw legums                                     11         $17.11        $188.21
+Fresh stawberry                               221         $28.59      $6,318.39
+Raw legums                                      2         $17.11         $34.22
+Green smoothie                                400         $17.68      $7,072.00
+Cuban sandwiche                                 2         $18.50         $37.00
+Hazelnut in black ceramic bowl                  2         $27.35         $54.70
+Tomatoes                                        1         $26.03         $26.03
+Plums                                         250         $19.18      $4,795.00
+Fresh blueberries                             334         $21.01      $7,017.34
+Green smoothie                                300         $17.68      $5,304.00
+Corn                                           68         $13.55        $921.40
+French fries                                   33         $18.32        $604.56
+Ground beef meat burger                        78         $11.73        $914.94
+Hazelnut in black ceramic bowl                  2         $27.35         $54.70
+Sweet fresh stawberry                          87         $29.45      $2,562.15
+Homemade bread                                  1         $17.48         $17.48
+Smoothie with chia seeds                       46         $25.26      $1,161.96
+Corn                                            1         $13.55         $13.55
+Plums                                           2         $19.18         $38.36
+Fresh blueberries                              46         $21.01        $966.46
+Green smoothie                                  1         $17.68         $17.68
+Corn                                            2         $13.55         $27.10
+French fries                                    4         $18.32         $73.28
+Ground beef meat burger                        64         $11.73        $750.72
+Hazelnut in black ceramic bowl                  2         $27.35         $54.70
+Sweet fresh stawberry                           3         $29.45         $88.35
+Homemade bread                                456         $17.48      $7,970.88
+Smoothie with chia seeds                        2         $25.26         $50.52
+Corn                                            5         $13.55         $67.75
+Plums                                         645         $19.18     $12,371.10
+Fresh blueberries                             -35         $21.01       $-735.35
+Green smoothie                                  2         $17.68         $35.36
+Corn                                          465         $13.55      $6,300.75
+French fries                                   20         $18.32        $366.40
+Ground beef meat burger                         4         $11.73         $46.92
+Hazelnut in black ceramic bowl                  1         $27.35         $27.35
+Sweet fresh stawberry                         131         $29.45      $3,857.95
+Homemade bread                                  9         $17.48        $157.32
+Smoothie with chia seeds                       13         $25.26        $328.38
+Corn                                          678         $13.55      $9,186.90
+Plums                                         334         $19.18      $6,406.12
+Fresh blueberries                            3445         $21.01     $72,379.45
+Green smoothie                               -123         $17.68     $-2,174.64
+Corn                                          445         $13.55      $6,029.75
+------------------------------------------------------------------
+GRAN TOTAL: $166,568.23
+Tiempo de ejecución: 0.003 s
+==================================================================
