@@ -1,8 +1,8 @@
-"""
-computeSales.py
+"""computeSales.py
 
-Lee el catálogo de precios y un registro de ventas, calcula el costo total por venta
-y el gran total e imprime resultados en pantalla y los guarda en SalesResults.txt.
+Lee el catálogo de precios y un registro de ventas, calcula el costo total por
+venta (admite cantidades negativas como devoluciones/ajustes), calcula el gran
+total, imprime resultados en pantalla y los guarda en SalesResults.txt.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-# Utilidades de moneda
+# Utilidades
 
 TWOPLACES = Decimal("0.01")
 
@@ -26,7 +26,7 @@ def to_decimal(value: Any) -> Optional[Decimal]:
     if value is None:
         return None
     try:
-        # Acepta números y cadenas como "12.34" o "1,234.50"
+        # Acepta números y cadenas
         if isinstance(value, str):
             value = value.replace(",", "").strip()
         return Decimal(str(value))
@@ -45,7 +45,7 @@ def money(amount: Decimal) -> str:
 @dataclass
 class CatalogEntry:
     """Representa un ítem del catálogo."""
-    key: str           # clave de búsqueda (nombre normalizado o id)
+    key: str                 # clave de búsqueda (nombre normalizado o id)
     unit_price: Decimal
     raw: Dict[str, Any]
 
@@ -59,7 +59,9 @@ class SaleLine:
 
     @property
     def line_total(self) -> Decimal:
-        return (self.unit_price * self.quantity).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+        return (
+            self.unit_price * self.quantity
+        ).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
 
 
 # Carga de archivos
@@ -79,17 +81,20 @@ def load_json(path: Path) -> Any:
 
 # Normalización y construcción de catálogo
 
-def _extract_product_fields(item: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[Decimal]]:
+def _extract_product_fields(
+    item: Dict[str, Any]
+) -> Tuple[Optional[str], Optional[str], Optional[Decimal]]:
     """
-    Intenta extraer (name, pid, price) desde diversas variantes de claves comunes
-    en catálogos reales. Devuelve (None, None, None) si no logra extraer nada útil.
+    Intenta extraer (name, pid, price) desde diversas variantes de claves
+    comunes en catálogos reales. Devuelve (None, None, None) si no logra
+    extraer nada útil.
     """
     # Posibles claves (insensible a mayúsculas)
     lower = {k.lower(): k for k in item.keys()}
 
     # Nombre
     name_key_candidates = ["product", "title", "name", "nombre", "producto"]
-    name = None
+    name: Optional[str] = None
     for c in name_key_candidates:
         if c in lower:
             name = str(item[lower[c]]).strip()
@@ -97,7 +102,7 @@ def _extract_product_fields(item: Dict[str, Any]) -> Tuple[Optional[str], Option
 
     # ID
     id_key_candidates = ["id", "product_id", "sku", "codigo", "code"]
-    pid = None
+    pid: Optional[str] = None
     for c in id_key_candidates:
         if c in lower:
             pid = str(item[lower[c]]).strip()
@@ -105,7 +110,7 @@ def _extract_product_fields(item: Dict[str, Any]) -> Tuple[Optional[str], Option
 
     # Precio
     price_key_candidates = ["price", "unit_price", "precio", "cost", "costo"]
-    price = None
+    price: Optional[Decimal] = None
     for c in price_key_candidates:
         if c in lower:
             price = to_decimal(item[lower[c]])
@@ -114,7 +119,9 @@ def _extract_product_fields(item: Dict[str, Any]) -> Tuple[Optional[str], Option
     return name, pid, price
 
 
-def build_catalog(data: Any) -> Tuple[Dict[str, CatalogEntry], Dict[str, CatalogEntry]]:
+def build_catalog(
+    data: Any
+) -> Tuple[Dict[str, CatalogEntry], Dict[str, CatalogEntry]]:
     """
     Construye dos índices del catálogo:
       - por nombre normalizado (lowercase): name_index
@@ -123,65 +130,85 @@ def build_catalog(data: Any) -> Tuple[Dict[str, CatalogEntry], Dict[str, Catalog
     # Si viene envuelto, intenta localizar la lista con un nombre común.
     products: Iterable[Dict[str, Any]]
     if isinstance(data, dict):
-        # claves típicas que envuelven la lista de productos
-        for key in ("products", "items", "catalog", "catalogue", "lista", "productos"):
+        # Claves típicas que envuelven la lista de productos
+        for key in ("products", "items", "catalog", "catalogue", "lista",
+                    "productos"):
             if key in data and isinstance(data[key], list):
                 products = data[key]  # type: ignore[assignment]
                 break
         else:
-            # Si no hay envoltura clara pero es dict, intenta asumir que sus values son items
+            # Si no hay envoltura clara pero es dict, asume que sus values son
+            # items con forma dict.
             products = [v for v in data.values() if isinstance(v, dict)]
     elif isinstance(data, list):
         products = data
     else:
-        raise ValueError("Estructura de catálogo no reconocida. Debe ser lista u objeto con lista.")
+        raise ValueError(
+            "Estructura de catálogo no reconocida. "
+            "Debe ser lista u objeto con lista."
+        )
 
     name_index: Dict[str, CatalogEntry] = {}
     id_index: Dict[str, CatalogEntry] = {}
 
     for idx, item in enumerate(products):
         if not isinstance(item, dict):
-            print(f"[WARN] Ítem de catálogo #{idx} no es un objeto: {item!r}", file=sys.stderr)
+            print(
+                f"[WARN] Ítem de catálogo #{idx} no es un objeto: {item!r}",
+                file=sys.stderr,
+            )
             continue
 
         name, pid, price = _extract_product_fields(item)
 
         if price is None or price < 0:
-            print(f"[WARN] Precio inválido en ítem de catálogo #{idx}: {item}", file=sys.stderr)
+            print(
+                f"[WARN] Precio inválido en ítem de catálogo #{idx}: {item}",
+                file=sys.stderr,
+            )
             continue
 
         if name:
             key = name.strip().lower()
-            name_index[key] = CatalogEntry(key=key, unit_price=price, raw=item)
+            name_index[key] = CatalogEntry(
+                key=key, unit_price=price, raw=item
+            )
 
         if pid:
-            id_index[pid] = CatalogEntry(key=pid, unit_price=price, raw=item)
+            id_index[pid] = CatalogEntry(
+                key=pid, unit_price=price, raw=item
+            )
 
     if not name_index and not id_index:
-        raise ValueError("No se pudo construir el índice del catálogo. Revisa las claves y el formato.")
+        raise ValueError(
+            "No se pudo construir el índice del catálogo. "
+            "Revisa las claves y el formato."
+        )
 
     return name_index, id_index
 
 
 # Extracción de ventas
 
-def _extract_sale_fields(item: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[Decimal]]:
+def _extract_sale_fields(
+    item: Dict[str, Any]
+) -> Tuple[Optional[str], Optional[str], Optional[Decimal]]:
     """
-    Intenta extraer (product_name, product_id, quantity) desde diversas variantes
-    de claves comunes en archivos de ventas.
+    Intenta extraer (product_name, product_id, quantity) desde diversas
+    variantes de claves comunes en archivos de ventas.
     """
     lower = {k.lower(): k for k in item.keys()}
 
     # Producto por nombre
-    product_name = None
-    for c in ("product", "producto", "title", "name", "Product"):
+    product_name: Optional[str] = None
+    for c in ("product", "producto", "title", "name"):
         key = c.lower()
         if key in lower:
             product_name = str(item[lower[key]]).strip()
             break
 
     # Producto por ID
-    product_id = None
+    product_id: Optional[str] = None
     for c in ("product_id", "id", "sku", "codigo", "code"):
         key = c.lower()
         if key in lower:
@@ -189,7 +216,7 @@ def _extract_sale_fields(item: Dict[str, Any]) -> Tuple[Optional[str], Optional[
             break
 
     # Cantidad
-    quantity = None
+    quantity: Optional[Decimal] = None
     for c in ("quantity", "qty", "cantidad"):
         key = c.lower()
         if key in lower:
@@ -207,7 +234,10 @@ def parse_sales(data: Any) -> List[Dict[str, Any]]:
         for key in ("sales", "ventas", "records", "items", "data"):
             if key in data and isinstance(data[key], list):
                 return data[key]
-    raise ValueError("Estructura de ventas no reconocida. Debe ser lista u objeto con lista.")
+    raise ValueError(
+        "Estructura de ventas no reconocida. "
+        "Debe ser lista u objeto con lista."
+    )
 
 
 # Cálculo principal
@@ -220,6 +250,11 @@ def compute_totals(
     """
     Recorre todas las ventas, valida datos y calcula totales.
     Devuelve (líneas válidas, errores, gran total).
+
+    Reglas:
+    - Cantidades negativas se interpretan como devoluciones/ajustes (se permiten
+      y restan del total).
+    - Cantidad igual a cero se reporta como advertencia y se omite.
     """
     lines: List[SaleLine] = []
     errors: List[str] = []
@@ -227,16 +262,26 @@ def compute_totals(
 
     for i, raw in enumerate(sales_items, start=1):
         if not isinstance(raw, dict):
-            errors.append(f"Línea #{i}: registro no es objeto JSON. Valor: {raw!r}")
+            errors.append(
+                f"Línea #{i}: registro no es objeto JSON. Valor: {raw!r}"
+            )
             continue
 
         pname, pid, qty = _extract_sale_fields(raw)
 
         if qty is None:
-            errors.append(f"Línea #{i}: cantidad inválida o ausente. Registro: {raw}")
+            errors.append(
+                f"Línea #{i}: cantidad inválida o ausente. Registro: {raw}"
+            )
             continue
-        if qty <= 0:
-            errors.append(f"Línea #{i}: cantidad no positiva ({qty}). Registro: {raw}")
+        # Cantidades negativas = devoluciones/ajustes (se permiten).
+        # Cantidad cero no afecta al total; se reporta como advertencia y
+        # se omite del reporte detallado.
+        if qty == 0:
+            errors.append(
+                f"Línea #{i}: cantidad igual a cero; partida omitida. "
+                f"Registro: {raw}"
+            )
             continue
 
         entry: Optional[CatalogEntry] = None
@@ -244,7 +289,12 @@ def compute_totals(
         # Intento por ID primero si viene
         if pid and pid in id_index:
             entry = id_index[pid]
-            label = entry.raw.get("product") or entry.raw.get("name") or entry.raw.get("title") or pid
+            label = (
+                entry.raw.get("product")
+                or entry.raw.get("name")
+                or entry.raw.get("title")
+                or pid
+            )
             product_label = str(label)
         # Si no, intento por nombre
         elif pname:
@@ -260,7 +310,10 @@ def compute_totals(
 
         if entry is None:
             errors.append(
-                f"Línea #{i}: producto '{product_label}' no encontrado en el catálogo. Registro: {raw}"
+                "Línea #"
+                f"{i}: producto '{product_label}' no encontrado en el "
+                "catálogo. Registro: "
+                f"{raw}"
             )
             continue
 
@@ -277,7 +330,7 @@ def compute_totals(
     return lines, errors, grand_total
 
 
-# Salida legible
+# Salida
 
 def render_report(
     price_file: Path,
@@ -287,7 +340,7 @@ def render_report(
     grand_total: Decimal,
     elapsed_s: float,
 ) -> str:
-    """Genera un reporte en texto"""
+    """Genera un reporte en texto."""
     from datetime import datetime
 
     header = [
@@ -296,20 +349,24 @@ def render_report(
         f"Ventas:   {sales_file}",
         f"Fecha/Hora: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "------------------------------------------------------------------",
+        "Convenciones: cantidades negativas = devoluciones/ajustes; "
+        "0 = omitida",
         f"Partidas válidas: {len(lines)}",
         f"Errores:          {len(errors)}",
         "------------------------------------------------------------------",
-        f"{'Producto':40s} {'Cant.':>8s} {'P. Unitario':>14s} {'Importe':>14s}",
-        "------------------------------------------------------------------",
     ]
+
+    header.append(
+        f"{'Producto':40s} {'Cant.':>8s} "
+        f"{'P. Unitario':>14s} {'Importe':>14s}"
+    )
+    header.append("------------------------------------------------------------------")
 
     body: List[str] = []
     for ln in lines:
         body.append(
-            f"{ln.product_label[:40]:40s} "
-            f"{str(ln.quantity):>8s} "
-            f"{money(ln.unit_price):>14s} "
-            f"{money(ln.line_total):>14s}"
+            f"{ln.product_label[:40]:40s} {str(ln.quantity):>8s} "
+            f"{money(ln.unit_price):>14s} {money(ln.line_total):>14s}"
         )
 
     footer = [
@@ -320,7 +377,8 @@ def render_report(
     ]
 
     if errors:
-        footer.append("\n[ERRORES]")
+        footer.append("")
+        footer.append("[ERRORES]")
         for e in errors:
             footer.append(f"- {e}")
 
@@ -328,31 +386,42 @@ def render_report(
 
 
 def choose_results_path(default_name: str = "SalesResults.txt") -> Path:
-
+    """Devuelve la ruta de salida; usa ./results/ si existe, si no el cwd."""
     results_dir = Path.cwd() / "results"
     if results_dir.exists() and results_dir.is_dir():
         return results_dir / default_name
     return Path.cwd() / default_name
 
 
-# --------------------------------- Main ------------------------------------- #
+# ---------------------------------- Main ----------------------------------- #
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+    """Parsea argumentos de línea de comandos."""
     parser = argparse.ArgumentParser(
-        description="Computa el total de ventas a partir de un catálogo y un registro de ventas."
+        description=(
+            "Computa el total de ventas a partir de un catálogo y un "
+            "registro de ventas."
+        )
     )
     parser.add_argument(
         "price_catalogue",
-        help="Ruta al archivo JSON del catálogo de precios (p. ej., source/TC1.ProductList.json)",
+        help=(
+            "Ruta al archivo JSON del catálogo de precios "
+            "(p. ej., source/TC1.ProductList.json)"
+        ),
     )
     parser.add_argument(
         "sales_record",
-        help="Ruta al archivo JSON del registro de ventas (p. ej., test/TC1.Sales.json)",
+        help=(
+            "Ruta al archivo JSON del registro de ventas "
+            "(p. ej., test/TC1.Sales.json)"
+        ),
     )
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    """Punto de entrada principal."""
     args = parse_args(argv)
 
     price_path = Path(args.price_catalogue)
@@ -366,7 +435,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         name_index, id_index = build_catalog(price_json)
         sales_items = parse_sales(sales_json)
 
-        lines, errors, grand_total = compute_totals(name_index, id_index, sales_items)
+        lines, errors, grand_total = compute_totals(
+            name_index, id_index, sales_items
+        )
     except Exception as exc:  # Errores no recuperables
         print(f"[ERROR] {exc}", file=sys.stderr)
         return 2
@@ -395,7 +466,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         # Retroalimentación breve
         print(f"\n[INFO] Resultados guardados en: {out_path}")
     except Exception as exc:
-        print(f"[WARN] No se pudo escribir el archivo de resultados: {exc}", file=sys.stderr)
+        print(
+            f"[WARN] No se pudo escribir el archivo de resultados: {exc}",
+            file=sys.stderr,
+        )
 
     return 0
 
