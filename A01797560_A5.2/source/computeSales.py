@@ -22,7 +22,8 @@ TWOPLACES = Decimal("0.01")
 
 
 def to_decimal(value: Any) -> Optional[Decimal]:
-    """Intenta convertir un valor a Decimal, devolviendo None si no es válido."""
+    """Intenta convertir un valor a Decimal,
+    devolviendo None si no es válido."""
     if value is None:
         return None
     try:
@@ -35,7 +36,8 @@ def to_decimal(value: Any) -> Optional[Decimal]:
 
 
 def money(amount: Decimal) -> str:
-    """Formatea un Decimal como moneda con 2 decimales y separadores de miles."""
+    """Formatea un Decimal como moneda con 2 decimales y
+    separadores de miles."""
     q = amount.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
     return f"${q:,.2f}"
 
@@ -227,7 +229,8 @@ def _extract_sale_fields(
 
 
 def parse_sales(data: Any) -> List[Dict[str, Any]]:
-    """Obtiene la lista de ventas desde el JSON, tolerando envolturas comunes."""
+    """Obtiene la lista de ventas desde el JSON,
+    tolerando envolturas comunes."""
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
@@ -252,8 +255,8 @@ def compute_totals(
     Devuelve (líneas válidas, errores, gran total).
 
     Reglas:
-    - Cantidades negativas se interpretan como devoluciones/ajustes (se permiten
-      y restan del total).
+    - Cantidades negativas se interpretan como devoluciones/ajustes
+    (se permiten y restan del total).
     - Cantidad igual a cero se reporta como advertencia y se omite.
     """
     lines: List[SaleLine] = []
@@ -360,7 +363,7 @@ def render_report(
         f"{'Producto':40s} {'Cant.':>8s} "
         f"{'P. Unitario':>14s} {'Importe':>14s}"
     )
-    header.append("------------------------------------------------------------------")
+    header.append("-----------------------------------------------------")
 
     body: List[str] = []
     for ln in lines:
