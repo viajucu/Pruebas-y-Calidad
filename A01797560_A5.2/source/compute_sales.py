@@ -12,10 +12,10 @@ import json
 import sys
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
-from datetime import datetime
 
 # Utilidades
 
@@ -45,10 +45,11 @@ def money(amount: Decimal) -> str:
 
 # Estructuras de datos
 
+
 @dataclass
 class CatalogEntry:
     """Representa un ítem del catálogo."""
-    key: str                 # clave de búsqueda (nombre normalizado o id)
+    key: str  # clave de búsqueda (nombre normalizado o id)
     unit_price: Decimal
     raw: Dict[str, Any]
 
@@ -62,13 +63,14 @@ class SaleLine:
 
     @property
     def line_total(self) -> Decimal:
-        """Representa una línea de venta ya validada."""
-        return (
-            self.unit_price * self.quantity
-        ).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+        """Total de la línea (precio * cantidad), redondeado a 2 decimales."""
+        return (self.unit_price * self.quantity).quantize(
+            TWOPLACES, rounding=ROUND_HALF_UP
+        )
 
 
 # Carga de archivos
+
 
 def load_json(path: Path) -> Any:
     """Carga JSON desde archivo y controla errores básicos."""
@@ -84,6 +86,7 @@ def load_json(path: Path) -> Any:
 
 
 # Normalización y construcción de catálogo
+
 
 def _extract_product_fields(
     item: Dict[str, Any]
@@ -135,8 +138,14 @@ def build_catalog(
     products: Iterable[Dict[str, Any]]
     if isinstance(data, dict):
         # Claves típicas que envuelven la lista de productos
-        for key in ("products", "items", "catalog", "catalogue", "lista",
-                    "productos"):
+        for key in (
+                "products",
+                "items",
+                "catalog",
+                "catalogue",
+                "lista",
+                "productos"
+        ):
             if key in data and isinstance(data[key], list):
                 products = data[key]  # type: ignore[assignment]
                 break
@@ -174,14 +183,10 @@ def build_catalog(
 
         if name:
             key = name.strip().lower()
-            name_index[key] = CatalogEntry(
-                key=key, unit_price=price, raw=item
-            )
+            name_index[key] = CatalogEntry(key=key, unit_price=price, raw=item)
 
         if pid:
-            id_index[pid] = CatalogEntry(
-                key=pid, unit_price=price, raw=item
-            )
+            id_index[pid] = CatalogEntry(key=pid, unit_price=price, raw=item)
 
     if not name_index and not id_index:
         raise ValueError(
@@ -193,6 +198,7 @@ def build_catalog(
 
 
 # Extracción de ventas
+
 
 def _extract_sale_fields(
     item: Dict[str, Any]
@@ -245,7 +251,93 @@ def parse_sales(data: Any) -> List[Dict[str, Any]]:
     )
 
 
+# ---------- Helpers para reducir variables locales en compute_totals --------
+
+
+def _lookup_entry_and_label(
+    name_index: Dict[str, CatalogEntry],
+    id_index: Dict[str, CatalogEntry],
+    pname: Optional[str],
+    pid: Optional[str],
+) -> Tuple[Optional[CatalogEntry], str]:
+    """Resuelve la entrada de catálogo y una etiqueta amigable del producto."""
+    # Intento por ID primero si viene
+    if pid and pid in id_index:
+        entry = id_index[pid]
+        label = (
+            entry.raw.get("product")
+            or entry.raw.get("name")
+            or entry.raw.get("title")
+            or pid
+        )
+        return entry, str(label)
+
+    # Intento por nombre si viene
+    if pname:
+        key = pname.strip().lower()
+        if key in name_index:
+            return name_index[key], pname
+        return None, pname
+
+    # Sin nombre ni id
+    return None, "(desconocido)"
+
+
+def process_sale_record(
+    name_index: Dict[str, CatalogEntry],
+    id_index: Dict[str, CatalogEntry],
+    raw: Dict[str, Any],
+    idx: int,
+) -> Tuple[Optional[SaleLine], Optional[str]]:
+    """Valida un registro de venta y construye una SaleLine o un error.
+
+    Devuelve (linea_valida, mensaje_error). Solo uno de los dos vendrá
+    con valor.
+    """
+    if not isinstance(raw, dict):
+        return None, (
+            f"Línea #{idx}: registro no es objeto JSON. "
+            f"Valor: {raw!r}"
+        )
+
+    pname, pid, qty = _extract_sale_fields(raw)
+
+    if qty is None:
+        return None, (
+            f"Línea #{idx}: cantidad inválida o ausente. "
+            f"Registro: {raw}"
+        )
+
+    if qty == Decimal("0"):
+        return None, (
+            f"Línea #{idx}: cantidad igual a cero; partida omitida. "
+            f"Registro: {raw}"
+        )
+
+    entry, product_label = _lookup_entry_and_label(
+        name_index,
+        id_index,
+        pname,
+        pid
+    )
+    if entry is None:
+        return None, (
+            "Línea #"
+            f"{idx}"
+            f": producto '{product_label}' no encontrado en el catálogo. "
+            f"Registro: {raw}"
+        )
+
+    line = SaleLine(
+        product_label=product_label,
+        quantity=qty,
+        unit_price=entry.unit_price,
+    )
+    return line, None
+
+
 # Cálculo principal
+
 
 def compute_totals(
     name_index: Dict[str, CatalogEntry],
@@ -257,8 +349,7 @@ def compute_totals(
     Devuelve (líneas válidas, errores, gran total).
 
     Reglas:
-    - Cantidades negativas se interpretan como devoluciones/ajustes
-    (se permiten y restan del total).
+    - Cantidades negativas se interpretan como devoluciones/ajustes.
     - Cantidad igual a cero se reporta como advertencia y se omite.
     """
     lines: List[SaleLine] = []
@@ -266,69 +357,14 @@ def compute_totals(
     grand_total = Decimal("0")
 
     for i, raw in enumerate(sales_items, start=1):
-        if not isinstance(raw, dict):
-            errors.append(
-                f"Línea #{i}: registro no es objeto JSON. Valor: {raw!r}"
-            )
+        line, err = process_sale_record(name_index, id_index, raw, i)
+        if err:
+            errors.append(err)
             continue
 
-        pname, pid, qty = _extract_sale_fields(raw)
-
-        if qty is None:
-            errors.append(
-                f"Línea #{i}: cantidad inválida o ausente. Registro: {raw}"
-            )
-            continue
-        # Cantidades negativas = devoluciones/ajustes (se permiten).
-        # Cantidad cero no afecta al total; se reporta como advertencia y
-        # se omite del reporte detallado.
-        if qty == 0:
-            errors.append(
-                f"Línea #{i}: cantidad igual a cero; partida omitida. "
-                f"Registro: {raw}"
-            )
-            continue
-
-        entry: Optional[CatalogEntry] = None
-
-        # Intento por ID primero si viene
-        if pid and pid in id_index:
-            entry = id_index[pid]
-            label = (
-                entry.raw.get("product")
-                or entry.raw.get("name")
-                or entry.raw.get("title")
-                or pid
-            )
-            product_label = str(label)
-        # Si no, intento por nombre
-        elif pname:
-            key = pname.strip().lower()
-            if key in name_index:
-                entry = name_index[key]
-                product_label = pname
-            else:
-                entry = None
-                product_label = pname
-        else:
-            product_label = "(desconocido)"
-
-        if entry is None:
-            errors.append(
-                "Línea #"
-                f"{i}: producto '{product_label}' no encontrado en el "
-                "catálogo. Registro: "
-                f"{raw}"
-            )
-            continue
-
-        line = SaleLine(
-            product_label=product_label,
-            quantity=qty,
-            unit_price=entry.unit_price,
-        )
-        lines.append(line)
-        grand_total += line.line_total
+        # line no es None en este punto
+        lines.append(line)  # type: ignore[arg-type]
+        grand_total += line.line_total  # type: ignore[union-attr]
 
     # Redondeo final del gran total a 2 decimales
     grand_total = grand_total.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
@@ -337,26 +373,32 @@ def compute_totals(
 
 # Salida
 
-def render_report(
-    price_file: Path,
-    sales_file: Path,
-    lines: List[SaleLine],
-    errors: List[str],
-    grand_total: Decimal,
-    elapsed_s: float,
-) -> str:
-    """Genera un reporte en texto."""
 
+@dataclass
+class ReportData:
+    """Paquete de datos para renderizar el reporte."""
+    price_file: Path
+    sales_file: Path
+    lines: List[SaleLine]
+    errors: List[str]
+    grand_total: Decimal
+    elapsed_s: float
+
+
+def render_report(data: ReportData) -> str:
+    """Genera un reporte en texto."""
     header = [
         "====================== Resultados de Ventas ======================",
-        f"Catálogo: {price_file}",
-        f"Ventas:   {sales_file}",
+        f"Catálogo: {data.price_file}",
+        f"Ventas:   {data.sales_file}",
         f"Fecha/Hora: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "------------------------------------------------------------------",
-        "Convenciones: cantidades negativas = devoluciones/ajustes; "
-        "0 = omitida",
-        f"Partidas válidas: {len(lines)}",
-        f"Errores:          {len(errors)}",
+        (
+            "Convenciones: cantidades negativas = devoluciones/ajustes; "
+            "0 = omitida"
+        ),
+        f"Partidas válidas: {len(data.lines)}",
+        f"Errores:          {len(data.errors)}",
         "------------------------------------------------------------------",
     ]
 
@@ -367,23 +409,25 @@ def render_report(
     header.append("-----------------------------------------------------")
 
     body: List[str] = []
-    for ln in lines:
+    for ln in data.lines:
         body.append(
-            f"{ln.product_label[:40]:40s} {str(ln.quantity):>8s} "
-            f"{money(ln.unit_price):>14s} {money(ln.line_total):>14s}"
+            (
+                f"{ln.product_label[:40]:40s} {str(ln.quantity):>8s} "
+                f"{money(ln.unit_price):>14s} {money(ln.line_total):>14s}"
+            )
         )
 
     footer = [
         "------------------------------------------------------------------",
-        f"GRAN TOTAL: {money(grand_total)}",
-        f"Tiempo de ejecución: {elapsed_s:.3f} s",
+        f"GRAN TOTAL: {money(data.grand_total)}",
+        f"Tiempo de ejecución: {data.elapsed_s:.3f} s",
         "==================================================================",
     ]
 
-    if errors:
+    if data.errors:
         footer.append("")
         footer.append("[ERRORES]")
-        for e in errors:
+        for e in data.errors:
             footer.append(f"- {e}")
 
     return "\n".join(header + body + footer)
@@ -397,7 +441,50 @@ def choose_results_path(default_name: str = "SalesResults.txt") -> Path:
     return Path.cwd() / default_name
 
 
+# ------------------------- Preparación y escritura --------------------------
+
+
+@dataclass
+class RunInputs:
+    """Agrupa insumos preparados para la ejecución."""
+    price_path: Path
+    sales_path: Path
+    name_index: Dict[str, CatalogEntry]
+    id_index: Dict[str, CatalogEntry]
+    sales_items: List[Dict[str, Any]]
+
+
+def prepare_run(price_catalogue: str, sales_record: str) -> RunInputs:
+    """Carga JSONs y construye índices/listas necesarias para el cálculo."""
+    price_path = Path(price_catalogue)
+    sales_path = Path(sales_record)
+
+    price_json = load_json(price_path)
+    sales_json = load_json(sales_path)
+
+    name_index, id_index = build_catalog(price_json)
+    sales_items = parse_sales(sales_json)
+
+    return RunInputs(
+        price_path=price_path,
+        sales_path=sales_path,
+        name_index=name_index,
+        id_index=id_index,
+        sales_items=sales_items,
+    )
+
+
+def write_report_file(report: str, filename: str = "SalesResults.txt") -> Path:
+    """Escribe el reporte en disco dentro de ./results si existe."""
+    out_path = choose_results_path(filename)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w", encoding="utf-8") as fh:
+        fh.write(report + "\n")
+    return out_path
+
+
 # ---------------------------------- Main ----------------------------------- #
+
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     """Parsea argumentos de línea de comandos."""
@@ -428,53 +515,41 @@ def main(argv: Optional[List[str]] = None) -> int:
     """Punto de entrada principal."""
     args = parse_args(argv)
 
-    price_path = Path(args.price_catalogue)
-    sales_path = Path(args.sales_record)
-
     start = time.perf_counter()
     try:
-        price_json = load_json(price_path)
-        sales_json = load_json(sales_path)
-
-        name_index, id_index = build_catalog(price_json)
-        sales_items = parse_sales(sales_json)
-
+        run = prepare_run(args.price_catalogue, args.sales_record)
         lines, errors, grand_total = compute_totals(
-            name_index, id_index, sales_items
+            run.name_index, run.id_index, run.sales_items
         )
-    except Exception as exc:  # Errores no recuperables
+    except (ValueError, OSError) as exc:  # Errores no recuperables esperados
         print(f"[ERROR] {exc}", file=sys.stderr)
         return 2
 
     elapsed = time.perf_counter() - start
 
-    # Render del reporte
     report = render_report(
-        price_file=price_path,
-        sales_file=sales_path,
-        lines=lines,
-        errors=errors,
-        grand_total=grand_total,
-        elapsed_s=elapsed,
+        ReportData(
+            price_file=run.price_path,
+            sales_file=run.sales_path,
+            lines=lines,
+            errors=errors,
+            grand_total=grand_total,
+            elapsed_s=elapsed,
+        )
     )
 
     # Impresión en consola
     print(report)
 
     # Escritura en archivo
-    out_path = choose_results_path("SalesResults.txt")
     try:
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with out_path.open("w", encoding="utf-8") as fh:
-            fh.write(report + "\n")
-        # Retroalimentación breve
-        print(f"\n[INFO] Resultados guardados en: {out_path}")
-    except Exception as exc:
+        saved_path = write_report_file(report, "SalesResults.txt")
+        print(f"\n[INFO] Resultados guardados en: {saved_path}")
+    except OSError as exc:
         print(
             f"[WARN] No se pudo escribir el archivo de resultados: {exc}",
             file=sys.stderr,
         )
-
     return 0
 
 
