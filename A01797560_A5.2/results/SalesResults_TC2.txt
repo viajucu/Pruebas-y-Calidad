@@ -1,7 +1,7 @@
 ====================== Resultados de Ventas ======================
 Catálogo: source\TC1.ProductList.json
 Ventas:   test\TC2.Sales.json
-Fecha/Hora: 2026-02-13 13:26:32
+Fecha/Hora: 2026-02-15 17:56:44
 ------------------------------------------------------------------
 Convenciones: cantidades negativas = devoluciones/ajustes; 0 = omitida
 Partidas válidas: 46

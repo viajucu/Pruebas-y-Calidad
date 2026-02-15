@@ -1,7 +1,7 @@
 ====================== Resultados de Ventas ======================
 Catálogo: source\TC1.ProductList.json
 Ventas:   test\TC1.Sales.json
-Fecha/Hora: 2026-02-13 13:26:05
+Fecha/Hora: 2026-02-15 17:56:06
 ------------------------------------------------------------------
 Convenciones: cantidades negativas = devoluciones/ajustes; 0 = omitida
 Partidas válidas: 46
@@ -57,5 +57,5 @@ Green smoothie                                  5         $17.68         $88.40
 Corn                                            4         $13.55         $54.20
 ------------------------------------------------------------------
 GRAN TOTAL: $2,481.86
-Tiempo de ejecución: 0.004 s
+Tiempo de ejecución: 0.003 s
 ==================================================================

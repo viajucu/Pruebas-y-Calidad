@@ -1,8 +1,9 @@
 """compute_sales.py
 
-Lee el catálogo de precios y un registro de ventas, calcula el costo total por
-venta (admite cantidades negativas como devoluciones/ajustes), calcula el gran
-total, imprime resultados en pantalla y los guarda en SalesResults.txt.
+Lee el catálogo de precios y un registro de ventas, calcula el
+costo total por venta (admite cantidades negativas como devoluciones o
+ajustes), calcula el gran total, imprime resultados en pantalla y los
+guarda en SalesResults.txt.
 """
 
 from __future__ import annotations
