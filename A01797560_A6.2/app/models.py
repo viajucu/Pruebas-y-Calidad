@@ -11,6 +11,7 @@ Incluye:
 - Validaciones estructurales en __post_init__.
 - Serialización/deserialización a dict (para persistencia JSON).
 - Utilidades de validación básicas (email, fechas).
+
 """
 
 from __future__ import annotations

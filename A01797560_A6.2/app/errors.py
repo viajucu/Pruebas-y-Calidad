@@ -7,6 +7,7 @@ Objetivos:
 - Clasificar errores por capa/causa (validación, reglas de negocio, persistencia).
 - Proveer mensajes consistentes y legibles en consola.
 - Permitir a servicios/repositorios reaccionar de forma específica.
+
 """
 
 from __future__ import annotations
