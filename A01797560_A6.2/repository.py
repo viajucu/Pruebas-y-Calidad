@@ -1,4 +1,6 @@
 """
+repository.py
+
 Contiene las clases de repositorio para gestionar la persistencia
 de entidades (Hotel, Customer, Reservation) usando archivos JSON.
 
@@ -22,10 +24,10 @@ import os
 from dataclasses import asdict
 from typing import Any, Callable, Dict, List, TypeVar
 
-from app.errors import (
-    PersistenceError,
-)
-from app.models import Customer, Hotel, Reservation
+
+from .errors import PersistenceError
+from .models import Customer, Hotel, Reservation
+
 
 T = TypeVar("T")  # Tipo genérico para listas de entidades
 
