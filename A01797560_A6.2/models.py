@@ -1,4 +1,6 @@
 """
+models.py
+
 Modelos de dominio para el sistema de reservaciones:
 - Hotel
 - Customer
@@ -20,7 +22,7 @@ import re
 import uuid
 
 
-# ---------- Utilidades ---------- #
+# ---------- Utilidades ----------
 
 _EMAIL_REGEX = re.compile(
     r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$"
@@ -59,7 +61,7 @@ def generate_id(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4()}"
 
 
-# ---------- Modelos ---------- #
+# ---------- Modelos ----------
 
 @dataclass(slots=True)
 class Hotel:
@@ -85,7 +87,7 @@ class Hotel:
             if not isinstance(self.rating, (int, float)) or not (0.0 <= float(self.rating) <= 5.0):
                 raise ValueError("rating debe estar entre 0.0 y 5.0.")
 
-    # ---------- Serialización ---------- #
+    # ---------- Serialización ----------
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
@@ -130,7 +132,7 @@ class Customer:
         if self.phone is not None and not isinstance(self.phone, str):
             raise ValueError("phone debe ser cadena si se proporciona.")
 
-    # ---------- Serialización ---------- #
+    # ---------- Serialización ----------
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
@@ -187,7 +189,7 @@ class Reservation:
         if self.status not in {"ACTIVE", "CANCELED"}:
             raise ValueError("status debe ser 'ACTIVE' o 'CANCELED'.")
 
-    # ---------- Serialización ---------- #
+    # ---------- Serialización ----------
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)

@@ -1,4 +1,6 @@
 """
+errors.py
+
 Jerarquía de excepciones para el sistema de reservaciones.
 
 Objetivos:
@@ -38,7 +40,7 @@ class ValidationError(AppError):
     """
 
 
-# ---------- Reglas de negocio ----------#
+# ---------- Reglas de negocio ----------
 
 class BusinessRuleError(AppError):
     """Violación de una regla de negocio.
@@ -60,7 +62,7 @@ class ConflictError(BusinessRuleError):
     """Conflicto de estado o recurso (p.ej. cancelar una reserva ya cancelada)."""
 
 
-# ---------- Persistencia / Archivos ----------#
+# ---------- Persistencia / Archivos ----------
 
 class PersistenceError(AppError):
     """Errores al interactuar con el almacenamiento (archivos).
