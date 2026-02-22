@@ -1,18 +1,9 @@
 """
 services.py
 
-Implementar la capa de reglas de negocio del sistema de reservaciones,
-orquestando los repositorios de persistencia (archivos JSON) y los
-modelos de dominio (Hotel, Customer, Reservation).
-
-Objetivos principales (alineados con los requisitos del ejercicio):
-    - Métodos con persistencia para Hotels, Customer y Reservation
-    - Centralizar reglas de negocio:
-    - Comunicación clara de errores mediante excepciones semánticas
-    - Mantener separación de responsabilidades
-
+Capa de reglas de negocio para el sistema de reservaciones.
+Orquesta repos (archivos JSON) y modelos de dominio.
 """
-
 
 from __future__ import annotations
 
@@ -34,6 +25,7 @@ from .repository import (
     ReservationRepository,
 )
 
+
 # ---------- Utilidades internas ----------
 
 
@@ -46,10 +38,7 @@ def _validate_dates(check_in: date, check_out: date) -> None:
 
 
 def _overlaps(a_start: date, a_end: date, b_start: date, b_end: date) -> bool:
-    """
-    True si los rangos [a_start, a_end) y [b_start, b_end) se solapan.
-    No hay solape cuando uno termina antes o empieza después del otro.
-    """
+    """True si [a_start, a_end) y [b_start, b_end) se solapan."""
     return not (a_end <= b_start or a_start >= b_end)
 
 
@@ -62,15 +51,11 @@ def _current_active_for_hotel(
     reservations: Iterable[Reservation],
     today: Optional[date] = None,
 ) -> List[Reservation]:
-    """
-    Reservas ACTIVAS 'en curso' hoy.
-    Consideramos activas en curso si: check_in <= today < check_out.
-    """
+    """Reservas ACTIVAS en curso hoy (check_in <= today < check_out)."""
     if today is None:
         today = date.today()
     return [
-        r for r in _active_reservations(reservations)
-        if r.check_in <= today < r.check_out
+        r for r in _active_reservations(reservations) if r.check_in <= today < r.check_out
     ]
 
 
@@ -82,20 +67,18 @@ def _active_overlaps_for_hotel(
     """Reservas ACTIVAS que se solapan con [check_in, check_out)."""
     _validate_dates(check_in, check_out)
     return [
-        r for r in _active_reservations(reservations)
+        r
+        for r in _active_reservations(reservations)
         if _overlaps(r.check_in, r.check_out, check_in, check_out)
     ]
 
 
 def _max_concurrent_active(reservations: Iterable[Reservation]) -> int:
-    """
-    Máximo número de reservas ACTIVAS solapadas (pico de ocupación).
-    Implementación 'line sweep': +1 en check_in, -1 en check_out.
-    """
+    """Pico de ocupación (reservas ACTIVAS solapadas) por 'line sweep'."""
     events = []
     for r in _active_reservations(reservations):
-        events.append((r.check_in, 1))     # inicia ocupación
-        events.append((r.check_out, -1))   # termina ocupación (rango [in, out))
+        events.append((r.check_in, 1))
+        events.append((r.check_out, -1))
     events.sort()
 
     current = 0
@@ -111,14 +94,7 @@ def _max_concurrent_active(reservations: Iterable[Reservation]) -> int:
 
 
 class HotelService:
-    """
-    Reglas de negocio para Hoteles y Reservas asociadas a hoteles.
-
-    - Crea/actualiza/borra hoteles
-    - Muestra hoteles
-    - Reserva habitación (verifica disponibilidad por solapes)
-    - Cancela reserva
-    """
+    """Reglas de negocio para Hoteles y Reservas asociadas."""
 
     def __init__(
         self,
@@ -141,7 +117,7 @@ class HotelService:
         address: Optional[str] = None,
         rating: Optional[float] = None,
     ) -> Hotel:
-        """Crea un hotel nuevo. Lanza DuplicateIdError si el ID ya existe."""
+        """Crea un hotel; falla si el ID ya existe."""
         if self._hotels.get_by_id(hotel_id) is not None:
             raise DuplicateIdError(f"Hotel '{hotel_id}' ya existe")
 
@@ -157,12 +133,14 @@ class HotelService:
         return hotel
 
     def get_hotel(self, hotel_id: str) -> Hotel:
+        """Obtiene un hotel por ID o lanza NotFoundError."""
         hotel = self._hotels.get_by_id(hotel_id)
         if hotel is None:
             raise NotFoundError(f"Hotel '{hotel_id}' no existe")
         return hotel
 
     def list_hotels(self) -> List[Hotel]:
+        """Lista todos los hoteles."""
         return self._hotels.list_all()
 
     def update_hotel(
@@ -175,14 +153,7 @@ class HotelService:
         address: Optional[str] = None,
         rating: Optional[float] = None,
     ) -> Hotel:
-        """
-        Modifica datos del hotel.
-
-        Reglas:
-        - Si se actualiza total_rooms, debe ser entero positivo.
-        - No se puede reducir total_rooms por debajo del pico de ocupación
-          (máximo de reservas activas solapadas en cualquier momento).
-        """
+        """Modifica datos del hotel y valida reducción segura de total_rooms."""
         hotel = self.get_hotel(hotel_id)
 
         if total_rooms is not None:
@@ -215,17 +186,12 @@ class HotelService:
         return updated
 
     def delete_hotel(self, hotel_id: str) -> None:
-        """
-        Elimina un hotel.
-        NO permitir si hay reservas ACTIVAS actuales (hoy) o futuras.
-        """
+        """Elimina un hotel si no tiene reservas activas presentes o futuras."""
         _ = self.get_hotel(hotel_id)  # confirma existencia
 
         active_or_future = [
             r
-            for r in _active_reservations(
-                self._reservations.list_by_hotel(hotel_id)
-            )
+            for r in _active_reservations(self._reservations.list_by_hotel(hotel_id))
             if r.check_out > date.today()
         ]
         if active_or_future:
@@ -252,12 +218,7 @@ class HotelService:
         reservation_id: Optional[str] = None,
         room_number: Optional[int] = None,
     ) -> Reservation:
-        """
-        Crea una reserva si hay disponibilidad para [check_in, check_out).
-
-        Disponibilidad:
-            total_rooms - reservas_activas_solapadas > 0
-        """
+        """Crea una reserva si hay disponibilidad en [check_in, check_out)."""
         _validate_dates(check_in, check_out)
         hotel = self.get_hotel(hotel_id)
 
@@ -265,13 +226,13 @@ class HotelService:
         if customer is None:
             raise NotFoundError(f"Customer '{customer_id}' no existe")
 
-        solapadas = _active_overlaps_for_hotel(
+        overlaps = _active_overlaps_for_hotel(
             self._reservations.list_by_hotel(hotel_id),
             check_in,
             check_out,
         )
-        disponibles = hotel.total_rooms - len(solapadas)
-        if disponibles <= 0:
+        available = hotel.total_rooms - len(overlaps)
+        if available <= 0:
             raise BusinessRuleError(
                 "No hay habitaciones disponibles para esas fechas"
             )
@@ -290,7 +251,7 @@ class HotelService:
         return reservation
 
     def cancel_reservation(self, reservation_id: str) -> Reservation:
-        """Cancela una reserva. Idempotente: no permite cancelar dos veces."""
+        """Cancela una reserva; idempotente ante segundo intento."""
         res = self._reservations.get_by_id(reservation_id)
         if res is None:
             raise NotFoundError(f"Reservation '{reservation_id}' no existe")
@@ -303,13 +264,7 @@ class HotelService:
 
 
 class CustomerService:
-    """
-    Reglas de negocio para Clientes.
-
-    - Crea/actualiza/borra clientes
-    - Muestra clientes
-    - No eliminar cliente con reservas ACTIVAS (presentes o futuras)
-    """
+    """Reglas de negocio para Clientes."""
 
     def __init__(
         self,
@@ -328,6 +283,7 @@ class CustomerService:
         email: str,
         phone: Optional[str] = None,
     ) -> Customer:
+        """Crea un cliente; falla si el ID ya existe."""
         if self._customers.get_by_id(customer_id) is not None:
             raise DuplicateIdError(f"Customer '{customer_id}' ya existe")
 
@@ -341,12 +297,14 @@ class CustomerService:
         return customer
 
     def get_customer(self, customer_id: str) -> Customer:
+        """Obtiene un cliente por ID o lanza NotFoundError."""
         c = self._customers.get_by_id(customer_id)
         if c is None:
             raise NotFoundError(f"Customer '{customer_id}' no existe")
         return c
 
     def list_customers(self) -> List[Customer]:
+        """Lista todos los clientes."""
         return self._customers.list_all()
 
     def update_customer(
@@ -357,6 +315,7 @@ class CustomerService:
         email: Optional[str] = None,
         phone: Optional[str] = None,
     ) -> Customer:
+        """Actualiza datos del cliente (campos opcionales)."""
         c = self.get_customer(customer_id)
 
         updated = Customer(
@@ -373,6 +332,7 @@ class CustomerService:
         return updated
 
     def delete_customer(self, customer_id: str) -> None:
+        """Elimina cliente si no tiene reservas activas presentes o futuras."""
         _ = self.get_customer(customer_id)  # confirma existencia
 
         active_or_future = [
@@ -396,12 +356,7 @@ class CustomerService:
 
 
 class ReservationService:
-    """
-    Consultas/operaciones de reservas.
-
-    La creación y cancelación delegan en HotelService para centralizar
-    la lógica de disponibilidad y consistencia.
-    """
+    """Consultas/operaciones de reservas (atajos)."""
 
     def __init__(
         self,
@@ -412,15 +367,18 @@ class ReservationService:
         self._hotel_service = hotel_service
 
     def get_reservation(self, reservation_id: str) -> Reservation:
+        """Obtiene reserva por ID o lanza NotFoundError."""
         r = self._reservations.get_by_id(reservation_id)
         if r is None:
             raise NotFoundError(f"Reservation '{reservation_id}' no existe")
         return r
 
     def list_by_hotel(self, hotel_id: str) -> List[Reservation]:
+        """Lista reservas por hotel."""
         return self._reservations.list_by_hotel(hotel_id)
 
     def list_by_customer(self, customer_id: str) -> List[Reservation]:
+        """Lista reservas por cliente."""
         return self._reservations.list_by_customer(customer_id)
 
     def create(
@@ -433,7 +391,7 @@ class ReservationService:
         reservation_id: Optional[str] = None,
         room_number: Optional[int] = None,
     ) -> Reservation:
-        """Atajo: crea reserva delegando en HotelService."""
+        """Crea reserva delegando en HotelService."""
         return self._hotel_service.reserve_room(
             customer_id=customer_id,
             hotel_id=hotel_id,
@@ -444,5 +402,5 @@ class ReservationService:
         )
 
     def cancel(self, reservation_id: str) -> Reservation:
-        """Atajo: cancela reserva delegando en HotelService."""
+        """Cancela reserva delegando en HotelService."""
         return self._hotel_service.cancel_reservation(reservation_id)

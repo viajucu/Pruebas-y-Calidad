@@ -11,7 +11,6 @@ Incluye:
 - Validaciones estructurales en __post_init__.
 - Serialización/deserialización a dict (para persistencia JSON).
 - Utilidades de validación básicas (email, fechas).
-
 """
 
 from __future__ import annotations
@@ -25,22 +24,23 @@ import uuid
 
 # ---------- Utilidades ----------
 
-_EMAIL_REGEX = re.compile(
-    r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$"
-)
+_EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
 
 
 def _validate_non_empty(value: str, field_name: str) -> None:
+    """Valida que el campo no esté vacío."""
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"'{field_name}' no puede estar vacío.")
 
 
 def _validate_positive_int(value: int, field_name: str) -> None:
+    """Valida que el entero sea positivo."""
     if not isinstance(value, int) or value <= 0:
         raise ValueError(f"'{field_name}' debe ser un entero positivo.")
 
 
 def _validate_email(value: str) -> None:
+    """Valida el formato de email."""
     if not isinstance(value, str) or not _EMAIL_REGEX.match(value):
         raise ValueError("Email inválido.")
 
@@ -49,34 +49,34 @@ def _date_from_iso(value: str) -> date:
     """Convierte 'YYYY-MM-DD' a date. Lanza ValueError si es inválida."""
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
-    except Exception as exc:
-        raise ValueError(f"Fecha inválida (esperado YYYY-MM-DD): {value}") from exc
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError(
+            f"Fecha inválida (esperado YYYY-MM-DD): {value}"
+        ) from exc
 
 
 def _date_to_iso(d: date) -> str:
+    """Convierte date a cadena ISO (YYYY-MM-DD)."""
     return d.isoformat()
 
 
 def generate_id(prefix: str) -> str:
-    """Genera IDs legibles, p. ej. 'HOTEL-<uuid4>'."""
+    """Genera IDs legibles, p. ej. 'RES-<uuid4>'."""
     return f"{prefix}-{uuid.uuid4()}"
 
 
 # ---------- Modelos ----------
 
+
 @dataclass(slots=True)
 class Hotel:
-    """
-    Representa un hotel.
-
-    Regla: total_rooms > 0.
-    """
+    """Representa un hotel. Regla: total_rooms > 0."""
     hotel_id: str
     name: str
     city: str
     total_rooms: int
     address: Optional[str] = None
-    rating: Optional[float] = None  # 0.0 - 5.0 (no obligatorio)
+    rating: Optional[float] = None  # 0.0 - 5.0 (opcional)
 
     def __post_init__(self) -> None:
         _validate_non_empty(self.hotel_id, "hotel_id")
@@ -85,18 +85,20 @@ class Hotel:
         _validate_positive_int(self.total_rooms, "total_rooms")
 
         if self.rating is not None:
-            if not isinstance(self.rating, (int, float)) or not (0.0 <= float(self.rating) <= 5.0):
+            if not isinstance(self.rating, (int, float)):
+                raise ValueError("rating debe ser numérico.")
+            if not (0.0 <= float(self.rating) <= 5.0):
                 raise ValueError("rating debe estar entre 0.0 y 5.0.")
 
     # ---------- Serialización ----------
 
     def to_dict(self) -> Dict[str, Any]:
-        data = asdict(self)
-        return data
+        """Serializa a dict."""
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Hotel":
-        # Normaliza/valida campos mínimos esperados
+        """Deserializa desde dict validando campos mínimos."""
         required = ("hotel_id", "name", "city", "total_rooms")
         for k in required:
             if k not in data:
@@ -113,13 +115,7 @@ class Hotel:
 
 @dataclass(slots=True)
 class Customer:
-    """
-    Representa un cliente.
-
-    Reglas:
-    - full_name no vacío.
-    - email con formato válido.
-    """
+    """Representa un cliente."""
     customer_id: str
     full_name: str
     email: str
@@ -136,11 +132,12 @@ class Customer:
     # ---------- Serialización ----------
 
     def to_dict(self) -> Dict[str, Any]:
-        data = asdict(self)
-        return data
+        """Serializa a dict."""
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Customer":
+        """Deserializa desde dict validando campos mínimos."""
         required = ("customer_id", "full_name", "email")
         for k in required:
             if k not in data:
@@ -193,14 +190,15 @@ class Reservation:
     # ---------- Serialización ----------
 
     def to_dict(self) -> Dict[str, Any]:
+        """Serializa a dict (fechas en ISO)."""
         data = asdict(self)
-        # Convertimos fechas a ISO
         data["check_in"] = _date_to_iso(self.check_in)
         data["check_out"] = _date_to_iso(self.check_out)
         return data
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Reservation":
+        """Deserializa desde dict. Acepta fechas ISO o date."""
         required = (
             "reservation_id",
             "hotel_id",
@@ -214,7 +212,7 @@ class Reservation:
 
         check_in = data["check_in"]
         check_out = data["check_out"]
-        # Aceptamos date o str en ISO; normalizamos
+
         if isinstance(check_in, str):
             check_in = _date_from_iso(check_in)
         if isinstance(check_out, str):

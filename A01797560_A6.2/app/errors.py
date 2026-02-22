@@ -2,57 +2,49 @@
 errors.py
 
 Jerarquía de excepciones para el sistema de reservaciones.
-
-Objetivos:
-- Clasificar errores por capa/causa (validación, reglas de negocio, persistencia).
-- Proveer mensajes consistentes y legibles en consola.
-- Permitir a servicios/repositorios reaccionar de forma específica.
-
+Clasifica errores por causa (validación, negocio, persistencia) y
+permite mensajes claros en consola.
 """
 
 from __future__ import annotations
 
 
 class AppError(Exception):
-    """Excepción base de la aplicación (no usar directamente).
-    Heredar de esta clase permite capturar 'errores de dominio' sin
-    atrapar excepciones del sistema (IOError, ValueError, etc.).
-    """
+    """Excepción base de la aplicación."""
 
     def __init__(self, message: str, *, cause: Exception | None = None) -> None:
         super().__init__(message)
         self.cause = cause
 
-    def __str__(self) -> str:  # Mensaje (incluye causa si existe)
+    def __str__(self) -> str:
         base = super().__str__()
         if self.cause is not None:
             return f"{base} (causa: {self.cause})"
         return base
 
 
-# ---------- Validación ----------#
+# ---------- Validación ----------
+
 
 class ValidationError(AppError):
-    """Datos inválidos a nivel de dominio/estructura (campos, tipos, rangos).
+    """
+    Datos inválidos a nivel de dominio/estructura (campos, tipos, rangos).
     Ejemplos:
       - total_rooms <= 0
-      - email con formato inválido
+      - email inválido
       - check_in >= check_out
     """
 
 
 # ---------- Reglas de negocio ----------
 
+
 class BusinessRuleError(AppError):
-    """Violación de una regla de negocio.
-    Ejemplos:
-      - No hay disponibilidad para el rango de fechas
-      - No se puede eliminar un hotel/cliente con reservas activas
-    """
+    """Violación de una regla de negocio."""
 
 
 class NotFoundError(BusinessRuleError):
-    """Entidad esperada que no existe (hotel/cliente/reserva no encontrado)."""
+    """Entidad esperada que no existe."""
 
 
 class DuplicateIdError(BusinessRuleError):
@@ -60,25 +52,20 @@ class DuplicateIdError(BusinessRuleError):
 
 
 class ConflictError(BusinessRuleError):
-    """Conflicto de estado o recurso (p.ej. cancelar una reserva ya cancelada)."""
+    """Conflicto de estado o recurso."""
 
 
 # ---------- Persistencia / Archivos ----------
 
+
 class PersistenceError(AppError):
-    """Errores al interactuar con el almacenamiento (archivos).
-    Ejemplos:
-      - Permisos de lectura/escritura
-      - Ruta inexistente no recuperable
-      - Fallo al guardar el dataset completo
-    """
+    """Errores al interactuar con el almacenamiento (archivos)."""
 
 
 class CorruptDataError(PersistenceError):
-    """El archivo existe pero contiene datos corruptos o registros inválidos.
-    Recomendación:
-      - En repository.py, atrapar registro a registro y continuar
-        (imprimir warnings y omitir el registro), para cumplir Req 5.
+    """
+    El archivo existe pero contiene datos corruptos o inválidos.
+    Sugerencia: omitir registro y continuar para cumplir Req 5.
     """
 
 
