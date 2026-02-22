@@ -25,5 +25,23 @@
     "check_out": "2026-02-25",
     "room_number": null,
     "status": "ACTIVE"
+  },
+  {
+    "reservation_id": "RES-00bf8caf-bf73-4f5a-a0c0-0588c5efb157",
+    "hotel_id": "H1",
+    "customer_id": "C1",
+    "check_in": "2026-02-23",
+    "check_out": "2026-02-25",
+    "room_number": null,
+    "status": "ACTIVE"
+  },
+  {
+    "reservation_id": "RES-cf9ec3ae-5762-436f-ad56-64e270d8756a",
+    "hotel_id": "H1",
+    "customer_id": "C2",
+    "check_in": "2026-02-23",
+    "check_out": "2026-02-25",
+    "room_number": null,
+    "status": "ACTIVE"
   }
 ]

@@ -1,55 +1,84 @@
 """
-Pruebas para models.py
+Pruebas unitarias para los modelos de dominio:
+- Hotel
+- Customer
+- Reservation
 
-Cubre validaciones de dominio:
-- Hotel.total_rooms > 0
-- Email de Customer
-- check_in < check_out en Reservation
-- Roundtrip de serialización a dict/JSON
+Valida: creación correcta, validaciones (__post_init__), y
+serialización/deserialización (to_dict / from_dict).
 """
 
-import unittest
-from datetime import date
 
+from __future__ import annotations
+
+import unittest
+from datetime import date  # noqa: F401  (se usa en la prueba negativa)
+
+from test.utils import make_reservation
 from app.models import Customer, Hotel, Reservation
 
 
 class TestModels(unittest.TestCase):
-    def test_hotel_total_rooms_debe_ser_positivo(self) -> None:
+    """Suite de pruebas para modelos de dominio y sus validaciones."""
+
+    def test_hotel_creacion_ok(self) -> None:
+        """Crear Hotel válido y verificar campos básicos."""
+        hobj = Hotel(hotel_id="H1", name="Hotel", city="CDMX", total_rooms=10)
+        self.assertEqual(hobj.hotel_id, "H1")
+        self.assertEqual(hobj.total_rooms, 10)
+
+    def test_hotel_total_rooms_invalido(self) -> None:
+        """Hotel total_rooms <= 0 debe fallar."""
         with self.assertRaises(ValueError):
-            Hotel(hotel_id="H1", name="X", city="CDMX", total_rooms=0)
+            _ = Hotel(hotel_id="H2", name="X", city="CDMX", total_rooms=0)
+
+    def test_hotel_from_to_dict(self) -> None:
+        """Serializar y deserializar Hotel conservando campos."""
+        hobj = Hotel(hotel_id="H3", name="Y", city="GDL", total_rooms=5)
+        dct = hobj.to_dict()
+        h2 = Hotel.from_dict(dct)
+        self.assertEqual(h2.hotel_id, "H3")
+        self.assertEqual(h2.total_rooms, 5)
 
     def test_customer_email_invalido(self) -> None:
+        """Customer con email inválido debe fallar."""
         with self.assertRaises(ValueError):
-            Customer(customer_id="C1", full_name="Ana", email="correo_malo")
+            _ = Customer(customer_id="C1", full_name="Ana", email="no-email")
+
+    def test_customer_from_to_dict(self) -> None:
+        """Serializar y deserializar Customer conservando campos."""
+        cobj = Customer(customer_id="C2", full_name="Luis", email="l@e.com")
+        dct = cobj.to_dict()
+        c2 = Customer.from_dict(dct)
+        self.assertEqual(c2.customer_id, "C2")
+        self.assertEqual(c2.full_name, "Luis")
+
+    def test_reservation_creacion_ok(self) -> None:
+        """Crear Reservation válida y verificar status por defecto."""
+        robj = make_reservation("R1", "H1")
+        self.assertEqual(robj.status, "ACTIVE")
 
     def test_reservation_fechas_invalidas(self) -> None:
+        """Reservation con check_in >= check_out debe fallar."""
+        check_in = date.today()
+        check_out = check_in
         with self.assertRaises(ValueError):
-            Reservation(
-                reservation_id="R1",
+            _ = Reservation(
+                reservation_id="R2",
                 hotel_id="H1",
                 customer_id="C1",
-                check_in=date(2026, 5, 10),
-                check_out=date(2026, 5, 9),
+                check_in=check_in,
+                check_out=check_out,
             )
 
-    def test_serializacion_roundtrip(self) -> None:
-        h = Hotel(hotel_id="H1", name="Hotel", city="CDMX", total_rooms=10)
-        c = Customer(customer_id="C1", full_name="Ana",
-                     email="ana@example.com")
-        r = Reservation(
-            reservation_id="R1",
-            hotel_id=h.hotel_id,
-            customer_id=c.customer_id,
-            check_in=date(2026, 5, 10),
-            check_out=date(2026, 5, 12),
-        )
-
-        self.assertEqual(Hotel.from_dict(h.to_dict()).hotel_id, "H1")
-        self.assertEqual(Customer.from_dict(c.to_dict()).customer_id, "C1")
-        self.assertEqual(
-            Reservation.from_dict(r.to_dict()).reservation_id, "R1"
-        )
+    def test_reservation_from_to_dict(self) -> None:
+        """Serializar/deserializar Reservation con fechas ISO."""
+        robj = make_reservation("R3", "H1")
+        dct = robj.to_dict()
+        r2 = Reservation.from_dict(dct)
+        self.assertEqual(r2.reservation_id, "R3")
+        self.assertEqual(r2.check_in, robj.check_in)
+        self.assertEqual(r2.check_out, robj.check_out)
 
 
 if __name__ == "__main__":

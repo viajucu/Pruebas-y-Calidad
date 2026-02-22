@@ -27,23 +27,33 @@ from .models import Customer, Hotel, Reservation
 
 
 class JsonStore:
-    """Encapsula lectura/escritura de listas en JSON con tolerancia a fallos."""
+    """Encapsula lectura/escritura de listas en JSON
+    con tolerancia a fallos."""
 
     @staticmethod
     def load_list(path: str) -> List[Dict[str, Any]]:
         """Carga una lista de dicts desde JSON. Tolerante a errores."""
         if not os.path.exists(path):
-            print(f"[WARN] Archivo no encontrado: {path} — se usará lista vacía")
+            print(
+                f"[WARN] Archivo no encontrado: {path} — "
+                "se usará lista vacía"
+            )
             return []
 
         try:
             with open(path, "r", encoding="utf-8") as fh:
                 raw = json.load(fh)
         except json.JSONDecodeError as exc:
-            print(f"[ERROR] JSON corrupto en {path}: {exc} — se usará lista vacía")
+            print(
+                f"[ERROR] JSON corrupto en {path}: {exc} — "
+                "se usará lista vacía"
+            )
             return []
         except OSError as exc:
-            print(f"[ERROR] No se pudo leer {path}: {exc} — se usará lista vacía")
+            print(
+                f"[ERROR] No se pudo leer {path}: {exc} — "
+                "se usará lista vacía"
+            )
             return []
 
         if not isinstance(raw, list):
@@ -89,19 +99,18 @@ class BaseRepository:
     # ---------- Operaciones internas ----------
 
     def _load_all(self) -> List[Any]:
-        """Carga todos los registros del JSON, omitiendo inválidos (Req 5)."""
+        """Carga todos los registros del JSON, omitiendo inválidos."""
         raw_list = JsonStore.load_list(self._path)
         items: List[Any] = []
         for i, raw in enumerate(raw_list):
             try:
                 item = self._from_dict(raw)
                 items.append(item)
-            except Exception as exc:  # noqa: BLE001
+            except (ValueError, TypeError) as exc:
                 print(
                     "[WARN] Registro inválido omitido en "
                     f"{self._path} (index={i}): {exc}"
                 )
-                continue
         return items
 
     def _save_all(self, items: List[Any]) -> None:

@@ -1,6 +1,4 @@
 """
-models.py
-
 Modelos de dominio para el sistema de reservaciones:
 - Hotel
 - Customer
@@ -15,16 +13,19 @@ Incluye:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
-from datetime import date, datetime
-from typing import Any, Dict, Optional
 import re
 import uuid
-
+from dataclasses import asdict, dataclass, field
+from datetime import date, datetime
+from typing import Any, Dict, Optional
 
 # ---------- Utilidades ----------
 
-_EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
+_EMAIL_REGEX = re.compile(
+    r"^[A-Za-z0-9._%+\-]+@"
+    r"[A-Za-z0-9.\-]+\."
+    r"[A-Za-z]{2,}$"
+)
 
 
 def _validate_non_empty(value: str, field_name: str) -> None:
@@ -87,7 +88,7 @@ class Hotel:
         if self.rating is not None:
             if not isinstance(self.rating, (int, float)):
                 raise ValueError("rating debe ser numérico.")
-            if not (0.0 <= float(self.rating) <= 5.0):
+            if not 0.0 <= float(self.rating) <= 5.0:
                 raise ValueError("rating debe estar entre 0.0 y 5.0.")
 
     # ---------- Serialización ----------
@@ -100,16 +101,25 @@ class Hotel:
     def from_dict(cls, data: Dict[str, Any]) -> "Hotel":
         """Deserializa desde dict validando campos mínimos."""
         required = ("hotel_id", "name", "city", "total_rooms")
-        for k in required:
-            if k not in data:
-                raise ValueError(f"Falta campo requerido en Hotel: {k}")
+        for key in required:
+            if key not in data:
+                raise ValueError(f"Falta campo requerido en Hotel: {key}")
+
         return cls(
             hotel_id=str(data["hotel_id"]),
             name=str(data["name"]),
             city=str(data["city"]),
             total_rooms=int(data["total_rooms"]),
-            address=str(data["address"]).strip() if data.get("address") else None,
-            rating=float(data["rating"]) if data.get("rating") is not None else None,
+            address=(
+                str(data["address"]).strip()
+                if data.get("address")
+                else None
+            ),
+            rating=(
+                float(data["rating"])
+                if data.get("rating") is not None
+                else None
+            ),
         )
 
 
@@ -139,9 +149,11 @@ class Customer:
     def from_dict(cls, data: Dict[str, Any]) -> "Customer":
         """Deserializa desde dict validando campos mínimos."""
         required = ("customer_id", "full_name", "email")
-        for k in required:
-            if k not in data:
-                raise ValueError(f"Falta campo requerido en Customer: {k}")
+        for key in required:
+            if key not in data:
+                raise ValueError(
+                    f"Falta campo requerido en Customer: {key}"
+                )
         return cls(
             customer_id=str(data["customer_id"]),
             full_name=str(data["full_name"]),
@@ -178,7 +190,7 @@ class Reservation:
             raise ValueError("check_in debe ser datetime.date.")
         if not isinstance(self.check_out, date):
             raise ValueError("check_out debe ser datetime.date.")
-        if not (self.check_in < self.check_out):
+        if self.check_in >= self.check_out:
             raise ValueError("check_in debe ser anterior a check_out.")
 
         if self.room_number is not None:
@@ -206,9 +218,11 @@ class Reservation:
             "check_in",
             "check_out",
         )
-        for k in required:
-            if k not in data:
-                raise ValueError(f"Falta campo requerido en Reservation: {k}")
+        for key in required:
+            if key not in data:
+                raise ValueError(
+                    f"Falta campo requerido en Reservation: {key}"
+                )
 
         check_in = data["check_in"]
         check_out = data["check_out"]
@@ -228,8 +242,8 @@ class Reservation:
             reservation_id=str(data["reservation_id"]),
             hotel_id=str(data["hotel_id"]),
             customer_id=str(data["customer_id"]),
-            check_in=check_in,     # type: ignore[arg-type]
-            check_out=check_out,   # type: ignore[arg-type]
+            check_in=check_in,   # type: ignore[arg-type]
+            check_out=check_out,  # type: ignore[arg-type]
             room_number=room_number,
             status=str(status),
         )

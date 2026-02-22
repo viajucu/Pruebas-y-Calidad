@@ -12,7 +12,12 @@ from __future__ import annotations
 class AppError(Exception):
     """Excepción base de la aplicación."""
 
-    def __init__(self, message: str, *, cause: Exception | None = None) -> None:
+    def __init__(
+            self,
+            message: str,
+            *,
+            cause: Exception | None = None,
+    ) -> None:
         super().__init__(message)
         self.cause = cause
 
