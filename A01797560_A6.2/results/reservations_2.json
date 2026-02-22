@@ -1,0 +1,20 @@
+[
+  {
+    "reservation_id": "RES-35b29ddb-1a5e-4d3d-b02e-e14ba0625a9f",
+    "hotel_id": "H1",
+    "customer_id": "C1",
+    "check_in": "2026-02-23",
+    "check_out": "2026-02-25",
+    "room_number": null,
+    "status": "ACTIVE"
+  },
+  {
+    "reservation_id": "RES-d849811b-f2e8-4fbf-8641-6f6fbd44d340",
+    "hotel_id": "H1",
+    "customer_id": "C2",
+    "check_in": "2026-02-23",
+    "check_out": "2026-02-25",
+    "room_number": null,
+    "status": "ACTIVE"
+  }
+]

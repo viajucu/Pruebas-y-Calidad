@@ -1,0 +1,10 @@
+[
+  {
+    "hotel_id": "H1",
+    "name": "Hotel Central",
+    "city": "CDMX",
+    "total_rooms": 2,
+    "address": null,
+    "rating": null
+  }
+]

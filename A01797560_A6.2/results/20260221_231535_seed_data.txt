@@ -1,0 +1,21 @@
+=== GENERANDO DATOS DE PRUEBA EN JSON ===
+✓ Hotel H1 creado
+✓ Cliente C1 creado
+✓ Cliente C2 creado
+✓ Reserva creada para C1: RES-35b29ddb-1a5e-4d3d-b02e-e14ba0625a9f
+✓ Reserva creada para C2: RES-d849811b-f2e8-4fbf-8641-6f6fbd44d340
+
+=== RESUMEN FINAL ===
+Hoteles: ['H1']
+Clientes: ['C1', 'C2']
+Reservas H1: ['RES-35b29ddb-1a5e-4d3d-b02e-e14ba0625a9f', 'RES-d849811b-f2e8-4fbf-8641-6f6fbd44d340']
+
+JSON generados/actualizados en:
+  C:\Users\vjuarezc\PycharmProjects\Pruebas-y-Calidad\A01797560_A6.2\data\hotels.json
+  C:\Users\vjuarezc\PycharmProjects\Pruebas-y-Calidad\A01797560_A6.2\data\customers.json
+  C:\Users\vjuarezc\PycharmProjects\Pruebas-y-Calidad\A01797560_A6.2\data\reservations.json
+
+Directorio de datos: C:\Users\vjuarezc\PycharmProjects\Pruebas-y-Calidad\A01797560_A6.2\data
+Directorio de resultados: C:\Users\vjuarezc\PycharmProjects\Pruebas-y-Calidad\A01797560_A6.2\results
+
+Tiempo total de ejecución: 0.031 s
