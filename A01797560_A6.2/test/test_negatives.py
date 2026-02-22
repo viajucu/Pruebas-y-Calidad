@@ -68,7 +68,7 @@ class TestNegatives(unittest.TestCase):
         csvc = CustomerService(customers, reservations)
         rsvc = ReservationService(reservations, hsvc)
 
-        # Guardamos todo en un único atributo (evita R0902).
+        # Guardamos en un unico atributo.
         self.ctx = Ctx(  # pylint: disable=attribute-defined-outside-init
             hotels=hotels,
             customers=customers,
@@ -153,7 +153,8 @@ class TestNegatives(unittest.TestCase):
             _ = ctx.hsvc.reserve_room("C2", "H1", ci, co)
 
     def test_cancel_reservation_dos_veces_conflict(self) -> None:
-        """Cancelar dos veces debe lanzar ConflictError en el segundo intento."""
+        """Cancelar dos veces debe lanzar ConflictError
+        en el segundo intento."""
         ctx = self.ctx
         ctx.hsvc.create_hotel("H1", "Hotel", "CDMX", 1)
         ctx.csvc.create_customer("C1", "Ana", "ana@example.com")
