@@ -91,7 +91,10 @@ def run_seed() -> None:
     # Resumen
     print("\n=== RESUMEN FINAL ===")
     print(f"Hoteles: {[h.hotel_id for h in hotel_svc.list_hotels()]}")
-    print(f"Clientes: {[c.customer_id for c in customer_svc.list_customers()]}")
+    print(
+        f"Clientes: "
+        f"{[c.customer_id for c in customer_svc.list_customers()]}"
+    )
     print(
         "Reservas H1: "
         f"{[r.reservation_id for r in reservation_svc.list_by_hotel('H1')]}"
