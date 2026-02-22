@@ -1,15 +1,6 @@
 [
   {
-    "reservation_id": "R1",
-    "hotel_id": "H1",
-    "customer_id": "C1",
-    "check_in": "2026-03-01",
-    "check_out": "2026-03-05",
-    "room_number": null,
-    "status": "ACTIVE"
-  },
-  {
-    "reservation_id": "RES-c1d874a6-8b6b-4aac-97d5-3c75bd9308dd",
+    "reservation_id": "RES-35b29ddb-1a5e-4d3d-b02e-e14ba0625a9f",
     "hotel_id": "H1",
     "customer_id": "C1",
     "check_in": "2026-02-23",
@@ -18,25 +9,7 @@
     "status": "ACTIVE"
   },
   {
-    "reservation_id": "RES-1b928740-e7c6-4fc4-a997-650c21f77169",
-    "hotel_id": "H1",
-    "customer_id": "C2",
-    "check_in": "2026-02-23",
-    "check_out": "2026-02-25",
-    "room_number": null,
-    "status": "ACTIVE"
-  },
-  {
-    "reservation_id": "RES-00bf8caf-bf73-4f5a-a0c0-0588c5efb157",
-    "hotel_id": "H1",
-    "customer_id": "C1",
-    "check_in": "2026-02-23",
-    "check_out": "2026-02-25",
-    "room_number": null,
-    "status": "ACTIVE"
-  },
-  {
-    "reservation_id": "RES-cf9ec3ae-5762-436f-ad56-64e270d8756a",
+    "reservation_id": "RES-d849811b-f2e8-4fbf-8641-6f6fbd44d340",
     "hotel_id": "H1",
     "customer_id": "C2",
     "check_in": "2026-02-23",

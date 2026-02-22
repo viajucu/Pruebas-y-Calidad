@@ -1,28 +1,10 @@
 [
   {
     "hotel_id": "H1",
-    "name": "Hotel Bueno",
+    "name": "Hotel Central",
     "city": "CDMX",
-    "total_rooms": 10
-  },
-
-  {
-    "hotel_id": "H2",
-    "name": "Hotel Malo",
-    "city": "CDMX",
-    "total_rooms": 0
-  },
-
-  {
-    "hotel_id": "H3",
-    "city": "CDMX",
-    "total_rooms": 5
-  },
-
-  {
-    "hotel_id": "H4",
-    "name": "Hotel Corrupto",
-    "city": "CDMX",
-    "total_rooms": "muchos"
+    "total_rooms": 2,
+    "address": null,
+    "rating": null
   }
 ]
